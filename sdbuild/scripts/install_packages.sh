@@ -8,6 +8,14 @@ shift
 
 fss="proc run dev"
 
+# PLNX 2024.1 adds CERT FILES which cause issues in QEMU ...  
+unset GIT_SSL_CAINFO
+unset SSL_CERT_DIR
+unset CURL_CA_BUNDLE
+unset SSL_CERT_FILE
+unset REQUESTS_CA_BUNDLE
+
+
 
 for fs in $fss
 do
@@ -38,6 +46,16 @@ export CCACHE_SLOPPINESS=file_macro,time_macros
 export CC=/usr/lib/ccache/gcc
 export CXX=/usr/lib/ccache/g++
 
+
+# Hardening of resolv.conf for 20.04 images over QEMU 5.2.0
+hostresolvfile=/etc/resolv.conf
+targetresolvfile=$target/etc/resolv.conf
+if [[ -L "$targetresolvfile" ]]; then
+    sudo mv $targetresolvfile ${targetresolvfile}.link
+    sudo cp -L $hostresolvfile $targetresolvfile
+fi
+
+
 for p in $@ 
 do
   if [ -n "$PACKAGE_PATH" -a -e $PACKAGE_PATH/$p ]; then
@@ -58,3 +76,9 @@ do
   fi
 done
 
+
+# Target resolv.conf back to linkfile
+if [[ ! -L "$targetresolvfile" ]]; then
+    sudo rm $targetresolvfile
+    sudo mv ${targetresolvfile}.link $targetresolvfile
+fi

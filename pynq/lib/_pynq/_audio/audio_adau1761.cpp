@@ -50,13 +50,12 @@
 extern "C" {
 #endif
 
-#include "xil_io.h"
-#include "xil_types.h"
 #include "i2cps.h"
 #include "uio.h"
 #include "audio_adau1761.h"
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #include <linux/i2c-dev.h>
 #include <stdlib.h>
@@ -182,8 +181,8 @@ extern "C" void config_audio_codec(int iic_index) {
     write_audio_reg(R10_RECORD_MICROPHONE_BIAS_CONTROL, 0x01, iic_fd);
     // Enable ALC control and noise gate
     write_audio_reg(R14_ALC_CONTROL_3, 0x20, iic_fd);
-    // Put CODEC in Master mode
-    write_audio_reg(R15_SERIAL_PORT_CONTROL_0, 0x01, iic_fd);
+    // Put CODEC in Slave mode
+    write_audio_reg(R15_SERIAL_PORT_CONTROL_0, 0x00, iic_fd);
     // Enable ADC on both channels, normal polarity and ADC high-pass filter
     write_audio_reg(R19_ADC_CONTROL, 0x33, iic_fd);
     // Mute play back Mixer3 and Mixer4 and enable when output is required
@@ -310,7 +309,7 @@ extern "C" void deselect(int iic_index) {
  * @return  none.
  *****************************************************************************/
 extern "C" void bypass(unsigned int audio_mmap_size,
-                       unsigned int nsamples, 
+                       unsigned int nsamples, unsigned int volume,
                        int uio_index, int iic_index) {
     int i, status;
     void *uio_ptr;
@@ -329,9 +328,15 @@ extern "C" void bypass(unsigned int audio_mmap_size,
     // Enable Mixer3 and Mixer4
     write_audio_reg(R22_PLAYBACK_MIXER_LEFT_CONTROL_0, 0x21, iic_fd);
     write_audio_reg(R24_PLAYBACK_MIXER_RIGHT_CONTROL_0, 0x41, iic_fd);
+
+    unsigned char vol_register = (unsigned char)volume << 2 | 0x3;
     // Enable Left/Right Headphone out
-    write_audio_reg(R29_PLAYBACK_HEADPHONE_LEFT_VOLUME_CONTROL, 0xE7, iic_fd);
-    write_audio_reg(R30_PLAYBACK_HEADPHONE_RIGHT_VOLUME_CONTROL, 0xE7, iic_fd);
+    write_audio_reg(R29_PLAYBACK_HEADPHONE_LEFT_VOLUME_CONTROL,
+                    vol_register,
+                    iic_fd);
+    write_audio_reg(R30_PLAYBACK_HEADPHONE_RIGHT_VOLUME_CONTROL,
+                    vol_register,
+                    iic_fd);
 
     for(i=0; i<nsamples; i++){
         //wait for RX data to become available
@@ -380,7 +385,7 @@ extern "C" void bypass(unsigned int audio_mmap_size,
  * @return  none.
  *****************************************************************************/
 extern "C" void record(unsigned int audio_mmap_size,
-                       unsigned int BufAddr, unsigned int nsamples, 
+                       unsigned int* BufAddr, unsigned int nsamples, 
                        int uio_index, int iic_index){
     unsigned int  i, status;
     void *uio_ptr;
@@ -406,8 +411,8 @@ extern "C" void record(unsigned int audio_mmap_size,
         DataR = *((volatile int *)(((uint8_t *)uio_ptr) + I2S_DATA_RX_R_REG));
 
         // Write the sample into memory
-        *((int *)BufAddr+2*i) = DataL;
-        *((int *)BufAddr+2*i+1) = DataR;
+        *(BufAddr+2*i) = DataL;
+        *(BufAddr+2*i+1) = DataR;
     }
 
     if (unsetUIO(uio_ptr, audio_mmap_size) < 0){
@@ -432,8 +437,8 @@ extern "C" void record(unsigned int audio_mmap_size,
  * @return  none.
  *****************************************************************************/
 extern "C" void play(unsigned int audio_mmap_size,
-                     unsigned int BufAddr, unsigned int nsamples, 
-                     int uio_index, int iic_index){
+                     unsigned int* BufAddr, unsigned int nsamples, 
+                     unsigned int volume, int uio_index, int iic_index){
     unsigned int  i, status;
     void *uio_ptr;
     int DataL, DataR;
@@ -448,9 +453,15 @@ extern "C" void play(unsigned int audio_mmap_size,
     // Unmute left and right DAC, enable Mixer3 and Mixer4
     write_audio_reg(R22_PLAYBACK_MIXER_LEFT_CONTROL_0, 0x21, iic_fd);
     write_audio_reg(R24_PLAYBACK_MIXER_RIGHT_CONTROL_0, 0x41, iic_fd);
+
+    unsigned char vol_register = (unsigned char)volume << 2 | 0x3;
     // Enable Left/Right Headphone out
-    write_audio_reg(R29_PLAYBACK_HEADPHONE_LEFT_VOLUME_CONTROL, 0xE7, iic_fd);
-    write_audio_reg(R30_PLAYBACK_HEADPHONE_RIGHT_VOLUME_CONTROL, 0xE7, iic_fd);
+    write_audio_reg(R29_PLAYBACK_HEADPHONE_LEFT_VOLUME_CONTROL,
+                    vol_register,
+                    iic_fd);
+    write_audio_reg(R30_PLAYBACK_HEADPHONE_RIGHT_VOLUME_CONTROL,
+                    vol_register,
+                    iic_fd);
 
     for(i=0; i<nsamples; i++){
         do {
@@ -461,8 +472,8 @@ extern "C" void play(unsigned int audio_mmap_size,
             0x00000001;
 
         // Read the sample from memory
-        DataL = *((int *)BufAddr+2*i);
-        DataR = *((int *)BufAddr+2*i+1);
+        DataL = *(BufAddr+2*i);
+        DataR = *(BufAddr+2*i+1);
 
         // Write the sample to output
         *((volatile int *)(((uint8_t *)uio_ptr) + I2S_DATA_TX_L_REG)) = DataL;

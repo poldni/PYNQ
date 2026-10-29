@@ -161,8 +161,8 @@ GPIO Peripherals
 
 User I/O peripherals can trigger interrupts when switches are toggled or buttons
 are pressed. Both the :ref:`Button<pynq-lib-button>` and
-:ref:`Switch<pynq-lib-switch>` classes have a function ``wait_for_level`` and a
-coroutine ``wait_for_level_async`` which block until the corresponding button or
+:ref:`Switch<pynq-lib-switch>` classes have a function ``wait_for_value`` and a
+coroutine ``wait_for_value_async`` which block until the corresponding button or
 switch has the specified value. This follows a convention throughout the pynq
 package that that coroutines have an ``_async`` suffix.
 
@@ -178,9 +178,9 @@ is defined:
         button = base.buttons[number]
         led = base.leds[number]
         while True:
-            await button.wait_for_level_async(1)
+            await button.wait_for_value_async(1)
             led.on()
-            await button.wait_for_level_async(0)
+            await button.wait_for_value_async(0)
             led.off()
 
 Next add instances of the coroutine to the default event loop
@@ -286,7 +286,7 @@ ensures that an interrupt isn't seen multiple times.
 Examples
 --------
 
-For more examples, see the AsyncIO Buttons Notebook in the on the Pynq-Z1 in the
+For more examples, see the AsyncIO Buttons Notebook on the ZCU104 in the
 following directory:
 
 .. code-block:: console

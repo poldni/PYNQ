@@ -5,6 +5,7 @@ set -e
 set -x
 
 ARCH=$1
+ROOT_IMAGE=$2
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 case ${ARCH} in
@@ -20,9 +21,22 @@ case ${ARCH} in
     ;;
 
 esac
+
+for f in `find $CT_COMPILE_ROOT/native -name bin -maxdepth 2`:
+do
+  export PATH=$f:$PATH
+done
+
 export -n LD_LIBRARY_PATH
+export -n LD_PRELOAD
 # Use cross tools to build the provided configuration
 ct-ng $sample
+
+sed -e 's|CT_ISL_MIRRORS=.*$|CT_ISL_MIRRORS="https://distfiles.macports.org/isl/"|' \
+    -e 's|CT_EXPAT_MIRRORS=.*$|CT_EXPAT_MIRRORS="https://github.com/libexpat/libexpat/releases/download/R_2_2_6"|' \
+    -e 's|CT_NEWLIB_MIRRORS=.*$|CT_NEWLIB_MIRRORS="https://sourceware.org/pub/newlib"|' \
+    -i .config
+
 ct-ng build
 
 cd ${ARCH}/microblazeel-xilinx-elf

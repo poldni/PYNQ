@@ -1,45 +1,17 @@
 #   Copyright (c) 2016, Xilinx, Inc.
-#   All rights reserved.
-#
-#   Redistribution and use in source and binary forms, with or without
-#   modification, are permitted provided that the following conditions are met:
-#
-#   1.  Redistributions of source code must retain the above copyright notice,
-#       this list of conditions and the following disclaimer.
-#
-#   2.  Redistributions in binary form must reproduce the above copyright
-#       notice, this list of conditions and the following disclaimer in the
-#       documentation and/or other materials provided with the distribution.
-#
-#   3.  Neither the name of the copyright holder nor the names of its
-#       contributors may be used to endorse or promote products derived from
-#       this software without specific prior written permission.
-#
-#   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-#   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-#   THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-#   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
-#   CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-#   EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-#   PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
-#   OR BUSINESS INTERRUPTION). HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-#   WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-#   OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-#   ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#   SPDX-License-Identifier: BSD-3-Clause
 
 import os
 import warnings
 import weakref
-from .ps import CPU_ARCH, ZU_ARCH, ZYNQ_ARCH
+from .ps import CPU_ARCH, ZU_ARCH, ZYNQ_ARCH, _is_versal
 
-__author__ = "Yun Rock Qu"
-__copyright__ = "Copyright 2016, Xilinx"
-__email__ = "pynq_support@xilinx.com"
 
 class _GPIO:
     """Internal Helper class to wrap Linux's GPIO Sysfs API.
 
-    This GPIO class does not handle PL I/O.
+    This GPIO class does not handle PL I/O without the use of
+    device tree overlays.
 
     Attributes
     ----------
@@ -89,7 +61,7 @@ class _GPIO:
             An integer read from the GPIO
 
         """
-        if self.direction is not 'in':
+        if self.direction != 'in':
             raise AttributeError("Cannot read GPIO output.")
 
         with open(self.path + 'value', 'r') as f:
@@ -108,7 +80,7 @@ class _GPIO:
         None
 
         """
-        if self.direction is not 'out':
+        if self.direction != 'out':
             raise AttributeError("Cannot write GPIO input.")
 
         if value not in (0, 1):
@@ -118,6 +90,29 @@ class _GPIO:
             f.write(str(value))
         return
 
+    def unexport(self):
+        """The method to unexport the GPIO using Linux's GPIO Sysfs API.
+
+        Returns
+        -------
+        None
+
+        """
+        if os.path.exists(self.path):
+            with open('/sys/class/gpio/unexport', 'w') as f:
+                f.write(str(self.index))
+
+    def is_exported(self):
+        """The method to check if a GPIO is still exported using
+        Linux's GPIO Sysfs API.
+
+        Returns
+        -------
+        bool
+            True if the GPIO is still loaded.
+
+        """
+        return os.path.exists(self.path)
 
 _gpio_map = weakref.WeakValueDictionary()
 
@@ -125,7 +120,8 @@ _gpio_map = weakref.WeakValueDictionary()
 class GPIO:
     """Class to wrap Linux's GPIO Sysfs API.
 
-    This GPIO class does not handle PL I/O.
+    This GPIO class does not handle PL I/O without the use of device tree
+    overlays.
 
     Attributes
     ----------
@@ -138,7 +134,9 @@ class GPIO:
 
     """
 
-    if CPU_ARCH == ZYNQ_ARCH:
+    if _is_versal():
+        _GPIO_MIN_USER_PIN = {'versal_gpio': 26, 'pmc_gpio': 52}
+    elif CPU_ARCH == ZYNQ_ARCH:
         _GPIO_MIN_USER_PIN = 54
     elif CPU_ARCH == ZU_ARCH:
         _GPIO_MIN_USER_PIN = 78
@@ -161,26 +159,24 @@ class GPIO:
         self._impl = None
         if gpio_index in _gpio_map:
             self._impl = _gpio_map[gpio_index]
-            if self._impl and self._impl.direction != direction:
+            if self._impl and self._impl.is_exported() and \
+               self._impl.direction != direction:
                 raise AttributeError("GPIO already in use in other direction")
 
-        if not self._impl:
+        if not self._impl or not self._impl.is_exported():
             self._impl = _GPIO(gpio_index, direction)
             _gpio_map[gpio_index] = self._impl
 
     @property
     def index(self):
-        """Index of the GPIO pin : int"""
         return self._impl.index
 
     @property
     def direction(self):
-        """Direction of the GPIO pin - either 'in' or 'out' : str"""
         return self._impl.direction
 
     @property
     def path(self):
-        """Path to the GPIO pin in the filesystem : str"""
         return self._impl.path
 
     def read(self):
@@ -209,8 +205,64 @@ class GPIO:
         """
         self._impl.write(value)
 
+    def release(self):
+        """The method to release the GPIO.
+
+        Returns
+        -------
+        None
+
+        """
+        self._impl.unexport()
+        del self._impl
+
+
     @staticmethod
-    def get_gpio_base():
+    def get_gpio_base_path(target_label=None):
+        """This method returns the path to the GPIO base using Linux's
+        GPIO Sysfs API.
+
+        This is a static method. To use:
+
+        >>> from pynq import GPIO
+
+        >>> gpio = GPIO.get_gpio_base_path()
+
+        Parameters
+        ----------
+        target_label : str
+            The label of the GPIO driver to look for, as defined in a
+            device tree entry.
+
+        Returns
+        -------
+        str
+            The path to the GPIO base.
+
+        """
+        if target_label is None and _is_versal():
+            raise ValueError(
+                "target_label must be specified on Versal; use "
+                "'versal_gpio' or 'pmc_gpio'."
+            )
+
+        valid_labels = []
+        if target_label is not None:
+            valid_labels.append(target_label)
+        else:
+            valid_labels.append('zynqmp_gpio')
+            valid_labels.append('zynq_gpio')
+
+        for root, dirs, files in os.walk('/sys/class/gpio'):
+            for name in dirs:
+                if 'gpiochip' in name:
+                    with open(os.path.join(root, name, "label")) as fd:
+                        label = fd.read().rstrip()
+                    if label in valid_labels:
+                        return os.path.join(root, name)
+
+    @staticmethod
+    def get_gpio_base(target_label=None):
         """This method returns the GPIO base using Linux's GPIO Sysfs API.
 
         This is a static method. To use:
@@ -223,22 +275,24 @@ class GPIO:
         ----
         For path '/sys/class/gpio/gpiochip138/', this method returns 138.
 
+        Parameters
+        ----------
+        target_label : str
+            The label of the GPIO driver to look for, as defined in a
+            device tree entry.
+
         Returns
         -------
         int
             The GPIO index of the base.
 
         """
-        for root, dirs, files in os.walk('/sys/class/gpio'):
-            for name in dirs:
-                if 'gpiochip' in name:
-                    with open(os.path.join(root, name, "label")) as fd:
-                        label = fd.read().rstrip()
-                    if label in ['zynqmp_gpio', 'zynq_gpio']:
-                        return int(''.join(x for x in name if x.isdigit()))
+        base_path = GPIO.get_gpio_base_path(target_label)
+        if base_path is not None:
+            return int(''.join(x for x in base_path if x.isdigit()))
 
     @staticmethod
-    def get_gpio_pin(gpio_user_index):
+    def get_gpio_pin(gpio_user_index, target_label=None):
         """This method returns a GPIO instance for PS GPIO pins.
 
         Users only need to specify an index starting from 0; this static
@@ -255,6 +309,9 @@ class GPIO:
         ----------
         gpio_user_index : int
             The index specified by users, starting from 0.
+        target_label : str
+            The label of the GPIO driver to look for, as defined in a
+            device tree entry.
 
         Returns
         -------
@@ -262,5 +319,47 @@ class GPIO:
             The Linux Sysfs GPIO pin number.
 
         """
-        return (GPIO.get_gpio_base() + GPIO._GPIO_MIN_USER_PIN +
+        if _is_versal():
+            if target_label not in GPIO._GPIO_MIN_USER_PIN:
+                raise ValueError(
+                    "target_label must be specified on Versal; use "
+                    "'versal_gpio' or 'pmc_gpio'."
+                )
+            GPIO_OFFSET = GPIO._GPIO_MIN_USER_PIN[target_label]
+        elif target_label is not None:
+            GPIO_OFFSET = 0
+        else:
+            GPIO_OFFSET = GPIO._GPIO_MIN_USER_PIN
+
+        return (GPIO.get_gpio_base(target_label) + GPIO_OFFSET +
                 gpio_user_index)
+
+    @staticmethod
+    def get_gpio_npins(target_label=None):
+        """This method returns the number of GPIO pins for the GPIO base
+        using Linux's GPIO Sysfs API.
+
+        This is a static method. To use:
+
+        >>> from pynq import GPIO
+
+        >>> gpio = GPIO.get_gpio_npins()
+
+        Parameters
+        ----------
+        target_label : str
+            The label of the GPIO driver to look for, as defined in a
+            device tree entry.
+
+        Returns
+        -------
+        int
+            The number of GPIO pins for the GPIO base.
+
+        """
+        base_path = GPIO.get_gpio_base_path(target_label)
+        if base_path is not None:
+            with open(os.path.join(base_path, "ngpio")) as fd:
+                ngpio = fd.read().rstrip()
+            return int(''.join(x for x in ngpio if x.isdigit()))
+

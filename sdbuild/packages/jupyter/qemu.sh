@@ -1,32 +1,44 @@
 # Set up some environment variables as /etc/environment
 # isn't sourced in chroot
-
-export PATH=/opt/python3.6/bin:$PATH
-export HOME=/root
-export PYNQ_PYTHON=python3.6
+set -x
+set -e
 
 export HOME=/root
-jupyter notebook --generate-config --allow-root
+export PYNQ_PYTHON=python3
 
-cat - >> /root/.jupyter/jupyter_notebook_config.py <<EOT
-c.NotebookApp.ip = '0.0.0.0'
-c.NotebookApp.nbserver_extensions = {"jupyterlab":True}
-c.NotebookApp.notebook_dir = '/home/xilinx/jupyter_notebooks'
-c.NotebookApp.password = 'sha1:46c5ef4fa52f:ee46dad5008c6270a52f6272828a51b16336b492'
-c.NotebookApp.port = 9090
-c.NotebookApp.iopub_data_rate_limit = 100000000
+if [ -z "$PYNQ_JUPYTER_NOTEBOOKS" ]; then
+	export PYNQ_JUPYTER_NOTEBOOKS=/home/xilinx/jupyter_notebooks
+fi 
+
+if [ ${ARCH} == 'arm' ]; then
+	export NODE_OPTIONS=--max-old-space-size=2048
+else
+	export NODE_OPTIONS=--max-old-space-size=4096
+fi
+
+source /etc/profile.d/pynq_venv.sh
+
+# jupyter_server config; hash the default 'xilinx' password.
+mkdir -p /root/.jupyter
+JHASH=$(python3 -c "from jupyter_server.auth import passwd; print(passwd('xilinx'))")
+
+cat - > /root/.jupyter/jupyter_server_config.py <<EOT
+c.ServerApp.ip = '0.0.0.0'
+c.ServerApp.port = 9090
+c.ServerApp.root_dir = '$PYNQ_JUPYTER_NOTEBOOKS'
+c.ServerApp.open_browser = False
+c.ServerApp.allow_root = True
+c.PasswordIdentityProvider.hashed_password = '${JHASH}'
+c.IdentityProvider.token = ''
+c.ZMQChannelsWebsocketConnection.iopub_data_rate_limit = 100000000
+import datetime
+expire_time = datetime.datetime.now() + datetime.timedelta(days=3650)
+c.IdentityProvider.cookie_options = {"expires": expire_time}
 EOT
 
-# Enable widgets
-jupyter nbextension enable --py --sys-prefix widgetsnbextension
-# Install Extensions
-jupyter contrib nbextension install --user
-jupyter nbextensions_configurator enable --user
-jupyter nbextension install rise --py --sys-prefix
-jupyter nbextension enable rise --py --sys-prefix
-# Enable jupyterlab
-jupyter serverextension enable jupyterlab
+# In the past, we would enable widgets here
+# As of JupyterLab3 - widgets are now installed with pip
 
-mkdir -p /home/xilinx/jupyter_notebooks
+mkdir -p $PYNQ_JUPYTER_NOTEBOOKS
 
 systemctl enable jupyter

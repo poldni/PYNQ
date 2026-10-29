@@ -51,7 +51,9 @@
  *****************************************************************************/
 #ifndef _TIMER_H_
 #define _TIMER_H_
-
+#ifdef __cplusplus 
+extern "C" {
+#endif
 #include <xparameters.h>
 
 #ifdef XPAR_XTMRCTR_NUM_INSTANCES
@@ -79,7 +81,11 @@
 typedef int timer;
 
 timer timer_open_device(unsigned int device);
+#ifdef XPAR_IO_SWITCH_NUM_INSTANCES
+#ifdef XPAR_IO_SWITCH_0_TIMER0_BASEADDR
 timer timer_open(unsigned int pin);
+#endif
+#endif
 void timer_delay(timer dev_id, unsigned int cycles);
 void timer_close(timer dev_id);
 void timer_pwm_generate(timer dev_id, unsigned int period, unsigned int pulse);
@@ -92,5 +98,8 @@ unsigned int timer_get_num_devices(void);
 void delay_us(unsigned int us);
 void delay_ms(unsigned int ms);
 
+#endif
+#ifdef __cplusplus 
+}
 #endif
 #endif  // _TIMER_H_

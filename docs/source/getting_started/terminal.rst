@@ -5,7 +5,7 @@ If you can't access the terminal from Jupyter, you can connect the micro-USB
 cable from your computer to the board and open a terminal. You can use the
 terminal to check the network connection of the board. You will need to have
 terminal emulator software installed on your computer. `PuTTY
-<http://www.putty.org/>`_ is one application that can be used, and is available
+<http://putty.software/>`_ is one application that can be used, and is available
 for free on Windows. To open a terminal, you will need to know the COM port for
 the board.
 
@@ -34,7 +34,7 @@ Hit *Enter* in the terminal window to make sure you can see the command prompt:
 
 .. code-block:: console
     
-    xilinnx@pynq:/home/xilinx#
+    xilinx@pynq:/home/xilinx#
 
 You can then run the same commands listed above to change the hostname, or configure a proxy. 
 
@@ -49,5 +49,3 @@ You can also check the IP address of the board using *ifconfig*:
 .. code-block:: console
     
     ifconfig
-
-.. _microsd-card-setup:

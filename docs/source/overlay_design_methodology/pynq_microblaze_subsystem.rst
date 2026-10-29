@@ -32,9 +32,10 @@ The PYNQ MicroBlaze data memory, either in local memory, or in DDR memory,
 can be used as a mailbox for communication and data exchanges between the 
 ARM processor and the PYNQ MicroBlaze.
 
-DDR memory is managed by the Linux kernel running on the Cortex-A9s.  Therefore,
+DDR memory is managed by the Linux kernel running on the application processor.
+Therefore,
 the PYNQ MicroBlaze must first be allocated memory regions to access DRAM. The 
-PYNQ  ``Xlnk()`` class is used to allocate memory in Linux. It also provides 
+PYNQ  ``allocate`` function is used to allocate memory in Linux. It also provides
 the  physical address of the memory. A PYNQ applications can send the physical 
 address to a PYNQ MicroBlaze, and the PYNQ MicroBlaze can then access the 
 buffer.
@@ -94,8 +95,6 @@ The corresponding Python constants are defined here:
 .. code-block:: console
 
    <PYNQ repository>/pynq/lib/pmod/constants.py
-   <PYNQ repository>/pynq/lib/arduino/constants.py
-   <PYNQ repository>/pynq/lib/rpi/constants.py
 
 The following example explains how Python could initiate a read from a 
 peripheral connected to a PYNQ MicroBlaze. 
@@ -153,7 +152,7 @@ architecture, and how to set up and build the required software projects to
 allow you to write your own application for the MicroBlaze inside an
 PYNQ MicroBlaze. 
 
-Xilinx® SDK projects can be created manually using the SDK 
+Vitis projects can be created manually using the Vitis 
 GUI, or software can be built using a Makefile flow. Starting from image v2.1, 
 users can also directly use the Jupyter notebook to program the PYNQ 
 MicroBlaze; more examples can be found in
@@ -167,32 +166,32 @@ MicroBlaze Processors
 
 As described in the previous section, a PYNQ MicroBlaze can be used as a 
 flexible controller for different types of external peripherals. The 
-ARM® Cortex®-A9 is an application processor, which runs PYNQ and Jupyter 
-notebook on a Linux OS. This scenario is not well suited to real-time 
+The ARM® application processor runs PYNQ and Jupyter notebooks on Linux. This
+scenario is not well suited to real-time
 applications, which is a common requirement for an embedded systems. 
-In the base overlay there are three PYNQ MicroBlazes. As well as acting as a 
-flexible controller, a PYNQ MicroBlaze can be used as dedicated real-time 
-controller.
+The ZCU104 base overlay contains two Pmod PYNQ MicroBlazes. As well as acting
+as a flexible controller, a PYNQ MicroBlaze can be used as a dedicated
+real-time controller.
+
+The VCK190 base overlay does not include a PYNQ MicroBlaze subsystem.
 
 PYNQ MicroBlazes can also be used standalone to offload some processing from 
 the main processor. However, note that the MicroBlaze processor inside a PYNQ 
-MicroBlaze in the base overlay is running at 100 MHz, compared to the Dual-Core 
-ARM Cortex-A9 running at 650 MHz. The clock speed, and different processor 
-architectures and features should be taken into account when offloading pure 
-application code. e.g. Vector processing on the ARM Cortex-A9 Neon processing 
-unit will be much more efficient than running on the MicroBlaze. The MicroBlaze 
-is most appropriate for low-level, background, or real-time applications.
+MicroBlaze in the base overlay runs at 100 MHz. The clock speed and different
+processor architectures and features should be taken into account when
+offloading application code. The MicroBlaze is most appropriate for low-level,
+background, or real-time applications.
 
      
 Software Requirements
 ---------------------
 
-`Xilinx SDK (Software Development Kit)
-<http://www.xilinx.com/products/design-tools/embedded-software/sdk.html>`_
+`Xilinx Vitis Unified Software Platform
+<https://www.xilinx.com/products/design-tools/vitis/vitis-platform.html>`_
 contains the MicroBlaze cross-compiler which can be used to build software for
-the MicroBlaze inside a PYNQ MicroBlaze. SDK is available for free as part of 
-the `Xilinx Vivado WebPack
-<https://www.xilinx.com/products/design-tools/vivado/vivado-webpack.html>`_.
+the MicroBlaze inside a PYNQ MicroBlaze. `Vitis Unified Software Platform
+<https://www.xilinx.com/products/design-tools/vitis/vitis-platform.html>`_ is 
+available for free and includes Vivado.
 
 The full source code for all supported PYNQ MicroBlaze peripherals is available 
 from the project GitHub. PYNQ ships with precompiled PYNQ MicroBlaze 
@@ -208,29 +207,32 @@ Release version    Vivado and SDK
 v1.4               2015.4
 v2.0               2016.1
 v2.1               2017.4
+v2.5               2019.1
+v2.6               2020.1 (Vitis)
+v2.7               2020.2 (Vitis)
+v3.0               2022.1 (Vitis)
+v3.1               2024.1 (Vitis)
 ================  ================
 
 It is recommended
-to use the same version to rebuild existing Vivado and SDK projects. If you only
-intend to build software, you will only need to install SDK. The full Vivado and
-SDK installation is only required to modify or design new overlays.
-You can use the Vivado HLx Web Install Client and select SDK and/or Vivado
-during the installation.
+to use the same version to rebuild existing Vivado and Vitis projects. Note that 
+for older PYNQ versions Vivado and SDK are required. Since 2019.2, SDK was integrated
+in Vitis. The Vitis installation provides Vivado as well.
 
 Compiling Projects
 ------------------
 
 Software executables run on the MicroBlaze inside a PYNQ MicroBlaze. Code for 
-the MicroBlaze can be written in C or C++ and compiled using Xilinx SDK .
+the MicroBlaze can be written in C or C++ and compiled using Vitis.
 
 You can pull or clone the PYNQ repository, and all the driver source and
 project files can be found in 
-``<PYNQ repository>\pynq\lib\<driver_group_name>\<project_directory>``.
+``<PYNQ repository>/pynq/lib/<driver_group_name>/<project_directory>``.
 
-SDK Application, Board Support Package, Hardware Platform
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Vitis Application, Board Support Package, Hardware Platform
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Each SDK application project requires a BSP project (Board Support Package), 
+Each Vitis application project requires a BSP project (Board Support Package), 
 and a hardware platform project. The application project will include the user 
 code (C/C++). The Application project is linked to a BSP. The BSP (Board 
 Support Package) contains software libraries and drivers to support the 
@@ -242,7 +244,7 @@ the system. It is used by the BSP to build software libraries to support the
 underlying hardware.
 
 All *Application* projects can be compiled from the command line using 
-makefiles, or imported into the SDK GUI.
+makefiles, or imported into the Vitis GUI.
 
 You can also use existing projects as a starting point to create your own
 project.
@@ -250,15 +252,8 @@ project.
 Board Support Package
 ^^^^^^^^^^^^^^^^^^^^^
 
-A Board Support Package (BSP) includes software libraries for peripherals in 
-the system. For example, the SDK projects for Pmod and Arduino peripherals 
-require the following 2 BSPs:
-
-BSP for the Arduino PYNQ MicroBlaze:
-
-    ``<PYNQ repository>/pynq/lib/arduino/bsp_iop_arduino/``
-    
-BSP for the Pmod PYNQ MicroBlaze:
+A Board Support Package (BSP) includes software libraries for peripherals in
+the system. The BSP for the Pmod PYNQ MicroBlaze is:
 
     ``<PYNQ repository>/pynq/lib/pmod/bsp_iop_pmod``
 
@@ -271,39 +266,34 @@ An application for the Pmod PYNQ MicroBlaze will be linked to the Pmod PYNQ
 MicroBlaze BSP. As the two Pmod PYNQ MicroBlazes are identical, an application 
 written for one Pmod PYNQ MicroBlaze can run on the other Pmod PYNQ MicroBlaze. 
 
-An Arduino application will be linked to the Arduino PYNQ MicroBlaze BSP.
-
 Building the Projects
 ^^^^^^^^^^^^^^^^^^^^^
 
 To build all the software projects, for example,
 you can run the corresponding makefile:
 
-    ``<PYNQ repository>/pynq/lib/arduino/makefile``
-    
     ``<PYNQ repository>/pynq/lib/pmod/makefile``
 
-Application projects for peripherals that ship with PYNQ (e.g. Pmod and Arduino
-peripherals) can also be found in the same location. Each project is contained
-in a separate folder.
+Application projects for Pmod peripherals can also be found in the same
+location. Each project is contained in a separate folder.
    
 The makefile compiles the application projects based on the BSP provided 
 in the correct location.
 
-The makefile requires SDK to be installed, and can be run from Windows, or
+The makefile requires Vitis to be installed, and can be run from Windows, or
 Linux.
 
-To run ``make`` from Windows, open SDK, and choose a temporary workspace (make
+To run ``make`` from Windows, open Vitis, and choose a temporary workspace (make
 sure this path is external to the downloaded PYNQ repository). From the
-*Xilinx Tools* menu, select *Launch Shell*.
+*Xilinx* menu, select *Vitis Shell*.
 
-.. image:: ../images/sdk_launch_shell.jpg
+.. image:: ../images/vitis_launch_shell.png
    :scale: 75%
    :align: center
 
-In Linux, open a terminal, and source the SDK tools.
+In Linux, open a terminal, and source the Vitis tools.
 
-From either the Windows Shell, or the Linux terminal, navigate to the sdk 
+From either the Windows Shell, or the Linux terminal, navigate to the Vitis
 folder in your local copy of the PYNQ repository:
 
 The following example shows how to run ``make`` in 
@@ -321,14 +311,11 @@ the application projects.
    :align: center
    
 
-If you examine the makefile, you can the *BIN_PMOD* variable at the top 
+If you examine the makefile, you can see that *BIN_PMOD* variable at the top 
 of the makefile includes all the bin files required by Pmod peripherals. 
 If you want to add your own custom project to the build process, you need to 
 add the project name to the *BIN_PMOD* variable, and save the project in the 
 same location as the other application projects.
-
-Similarly, you have to following the same steps to build Arduino application 
-projects.
 
 In addition, individual projects can be built by navigating to the 
 ``<project_directory>/Debug`` and running ``make``.
@@ -340,7 +327,7 @@ Compiling code produces an executable file (.elf) along with its
 binary format (.bin) to be downloaded to a PYNQ MicroBlaze.
 
 A .bin file can be generated from a .elf by running the following command from
-the SDK shell:
+the Vitis shell:
 
     ``mb-objcopy -O binary <input_file>.elf <output_file>.bin``
 
@@ -348,39 +335,41 @@ This is done automatically by the makefile for the existing application
 projects. The makefile will also copy all .bin files into the 
 ``<PYNQ repository>/pynq/lib/<driver_group_name>/`` folder.
 
-Creating Your Own
-^^^^^^^^^^^^^^^^^
+Creating Your Own Project
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Using the makefile flow, you can use an existing project as a starting point 
 for your own project.
 
-Copy and rename the project, and modify or replace the .c file in the src/ with
-your C code. The generated .bin file will have the same base name as your C
-file.
+Copy and rename the project, and modify or replace the ``.c`` file in the
+``src/`` with your C code. The generated .bin file will have the same base
+name as your C file.
 
 For example, if your C code is ``my_peripheral.c``, the generated .elf and .bin 
 will be ``my_peripheral.elf`` and ``my_peripheral.bin``.
 
 The naming convention recommended for peripheral applications is
-``<pmod|arduino>_<peripheral>``.
+``pmod_<peripheral>``.
 
 You will need to update references from the old project name to your new 
 project name in ``<project_directory>/Debug/makefile`` and 
 ``<project_directory>/Debug/src/subdir.mk``.
 
 If you want your project to build in the main makefile, you should also append
-the .bin name of your project to the *BIN_PMOD* (or *BIN_ARDUINO*) variable at 
-the top of the makefile.
+the .bin name of your project to the *BIN_PMOD* variable at the top of the
+makefile.
 
-If you are using the SDK GUI, you can import the Hardware Platform, BSP, and 
-any application projects into your SDK workspace.
+If you are using the Vitis GUI, you can import the fixed Hardware Platform, BSP, and 
+any application projects into your Vitis workspace. Select MicroBlaze as the target 
+processor in the when creating the application.
 
-.. image:: ../images/sdk_import_bsp.JPG
+
+.. image:: ../images/vitis_import_bsp.png
    :scale: 75%
    :align: center
 
 
-The SDK GUI can be used to build and debug your code.  
+The Vitis GUI can be used to build and debug your code.  
 
 
 Writing Applications
@@ -397,7 +386,7 @@ Header Files and Libraries
 --------------------------
 
 A library is provided for the PYNQ MicroBlaze which includes an API for local 
-peripherals (IIC, SPI, Timer, Uart, GPIO), the configurable switch, links to 
+peripherals (IIC, SPI, Timer, UART, GPIO), the configurable switch, links to 
 the peripheral addresses, and mappings for the mailbox used in the existing 
 PYNQ MicroBlaze peripheral applications provided with PYNQ. This library can be 
 used to write custom PYNQ MicroBlaze applications.
@@ -529,10 +518,9 @@ IO Switch Modes and Pin Mapping
 -------------------------------
 Note that the IO switch IP is a customizable IP can be configured by users 
 inside a Vivado project (by double clicking the IP icon of the IO switch). 
-There are 4 pre-defined modes (`pmod`, `dual pmod`, `arduino`, `raspberrypi`) 
-and 1 fully-customizable mode (`custom`) for users to choose. 
-In the base overlay, we have only used `pmod` and `arduino` as the IO switch 
-modes.
+There are 4 pre-defined modes (`pmod`, `dual pmod`, `arduino`, `raspberrypi`)
+and 1 fully-customizable mode (`custom`) for users to choose. The ZCU104 base
+overlay uses the `pmod` mode.
 
 Switch mappings used for Pmod:
 
@@ -801,7 +789,8 @@ Remaining code:
 
          case READ_AND_LOG:
        // initialize logging variables, reset cmd
-       cb_init(&circular_log, LOG_BASE_ADDRESS, LOG_CAPACITY, LOG_ITEM_SIZE);
+       cb_init(&circular_log, 
+         LOG_BASE_ADDRESS, LOG_CAPACITY, LOG_ITEM_SIZE, 1);
        delay = MAILBOX_DATA(1);
        MAILBOX_CMD_ADDR = 0x0; 
 
@@ -913,7 +902,7 @@ expects for the same function.
     self.microblaze.write_blocking_command(READ_SINGLE_VALUE)
 
 The command is blocking so that Python code will not proceed unless an 
-acknowledgement has been received from the  MicroBlaze. Internally, after the 
+acknowledgment has been received from the  MicroBlaze. Internally, after the 
 PYNQ MicroBlaze has finished its task, it will write ``0x0`` to clear the 
 command area. The Python code checks this command area (in this case, the Python code 
 constantly checks whether the ``0x3`` value is still present at the 

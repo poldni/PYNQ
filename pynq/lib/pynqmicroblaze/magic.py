@@ -1,42 +1,13 @@
 #   Copyright (c) 2018, Xilinx, Inc.
-#   All rights reserved.
-#
-#   Redistribution and use in source and binary forms, with or without
-#   modification, are permitted provided that the following conditions are met:
-#
-#   1.  Redistributions of source code must retain the above copyright notice,
-#       this list of conditions and the following disclaimer.
-#
-#   2.  Redistributions in binary form must reproduce the above copyright
-#       notice, this list of conditions and the following disclaimer in the
-#       documentation and/or other materials provided with the distribution.
-#
-#   3.  Neither the name of the copyright holder nor the names of its
-#       contributors may be used to endorse or promote products derived from
-#       this software without specific prior written permission.
-#
-#   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-#   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-#   THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-#   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
-#   CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-#   EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-#   PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
-#   OR BUSINESS INTERRUPTION). HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-#   WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-#   OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-#   ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#   SPDX-License-Identifier: BSD-3-Clause
 
-__author__ = "Peter Ogden"
-__copyright__ = "Copyright 2018, Xilinx"
-__email__ = "pynq_support@xilinx.com"
 
-from .rpc import MicroblazeRPC
 
 from IPython.core.magic import cell_magic, Magics, magics_class
 from IPython import get_ipython
 from IPython.display import display, HTML
 from IPython.display import display_javascript
+from .rpc import MicroblazeRPC
 
 
 class _DataHolder:
@@ -77,7 +48,6 @@ class MicroblazeMagics(Magics):
             program = MicroblazeRPC(mb_info, '#line 1 "cell_magic"\n\n' + cell)
         except RuntimeError as r:
             return HTML("<pre>Compile FAILED\n" + r.args[0] + "</pre>")
-            return None
         for name, adapter in program.visitor.functions.items():
             if adapter.filename == "cell_magic":
                 self.shell.user_ns.update(
@@ -85,6 +55,7 @@ class MicroblazeMagics(Magics):
 
 
 js = """
+try {
 require(['notebook/js/codecell'], function(codecell) {
   codecell.CodeCell.options_default.highlight_modes[
       'magic_text/x-csrc'] = {'reg':[/^%%microblaze/]};
@@ -93,6 +64,7 @@ require(['notebook/js/codecell'], function(codecell) {
           if (cell.cell_type == 'code'){ cell.auto_highlight(); } }) ;
   });
 });
+} catch (e) {};
 """
 
 instance = get_ipython()
@@ -100,3 +72,8 @@ instance = get_ipython()
 if instance:
     get_ipython().register_magics(MicroblazeMagics)
     display_javascript(js, raw=True)
+    import nest_asyncio
+    nest_asyncio.apply()
+
+
+

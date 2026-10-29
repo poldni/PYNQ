@@ -1,3 +1,6 @@
+# Copyright (C) 2022 Xilinx, Inc
+# SPDX-License-Identifier: BSD-3-Clause
+
 # Makefile to build select Microblaze projects.
 
 
@@ -39,7 +42,9 @@ clean:
 	rm -f */Debug/*.elf.size
 	rm -f */Debug/src/*.o
 	rm -f */Debug/src/*.d
-	rm -f *.bin
 	rm -rf .Xil .metadata SDK.log	
+
+cleanall: clean
+	rm -f *.bin
 
 FORCE:

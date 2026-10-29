@@ -1,0 +1,12 @@
+# include top-level files
+include *.md
+include LICENSE
+include THIRD_PARTY_LIC
+
+# include notebooks and images in docs folder
+include docs/source/*.ipynb
+include docs/source/getting_started/*.ipynb
+recursive-include docs/source/images *
+
+# include misc files
+include pynq/devices/default.xclbin

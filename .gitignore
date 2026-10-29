@@ -14,9 +14,15 @@
 Thumbs.db
 thumbs.db
 
-# Logs and Databases
+# Logs, Databases and Journals
 ######################
 *.log
+*.jou
+*.vitis_hls_log*.xml
+
+# Compiled shared objects (build artefacts of pynq/lib/_pynq/*)
+######################
+*.so
 
 # VIM Swap Files
 ######################
@@ -26,6 +32,23 @@ thumbs.db
 ######################
 build/
 sdcard/
+dist/
+
+# Raw overlay files
+*.bit
+*.hwh
+*.xsa
+*.pdi
+*.dcp
+*.ncr
+
+# Vivado project directories, regenerated from the .tcl sources
+######################
+boards/*/base/base/
+boards/*/golden/golden/
+.Xil/
+*.pb
+hd_visual/
 
 # Test failure outputs
 ######################
@@ -40,3 +63,10 @@ __pycache__/
 ######################
 GNUmakefile
 user.props
+
+# Miscellaneous
+######################
+.vscode/
+.venv/
+*.egg-info/
+.coverage

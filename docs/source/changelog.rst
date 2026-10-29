@@ -2,6 +2,249 @@
 Change Log
 ************************
 
+Version 4.0.0
+============================
+
+A major release: migration off Petalinux, adoption of AMD EDF (Yocto /
+bitbake), upgrade to Xilinx 2025.2 tools, and deprecation of Pynq-Z1 /
+Pynq-Z2.
+
+Updates to PYNQ in this release:
+
+* Image releases:
+   * zcu104_v4.0.0
+   * vck190_v4.0.0
+
+* Upgraded Software
+   * Xilinx tools upgraded to **2025.2**
+   * Build moved from Petalinux to AMD **EDF (Yocto / bitbake)** on an
+     **Ubuntu 24.04 (Noble)** root filesystem.
+     Petalinux is no longer required on the host; only Vivado and
+     Docker are.
+   * Yocto version compatibility: Scarthgap
+
+* New Backends
+   * ``pynq.pl_server.VersalDevice`` adds support for Versal Adaptive
+     SoCs, including ``.pdi`` overlays.
+   * **VCK190** board support with segmented ``.pdi`` configuration.
+
+* Deprecations
+   * Removed ``pynq.lib.arduino``, ``pynq.lib.logictools``, and
+     ``pynq.lib.rpi``.
+   * Support for **Pynq-Z1** and **Pynq-Z2** boards is removed.
+     Their board directories, Petalinux BSP wiring, and board-only
+     documentation are gone.
+   * Petalinux build flow removed from ``sdbuild/``
+   * Metadata and utilities functionality moved to the ``pynqmetadata``
+     and ``pynqutils`` packages.
+
+Version 3.1.0
+============================
+
+Updates to PYNQ since the last release include:
+
+* Image releases:
+   * pynq_z1_v3.1.0
+   * pynq_z2_v3.1.0
+   * zcu104_v3.1.0
+
+* Upgraded Software
+   * All overlays built with Vivado 2024.1
+   * Linux kernel and build updated to Petalinux 2024.1
+
+* New Features
+   * Added PYNQ.remote and PYNQ.cpp
+   * Docker image build flow added
+
+* Deprecations
+   * Support for Alveo and AWS F1 platforms is deprecated
+   * Removed Vagrant VM support for SD card image builds
+
+Version 3.0.0
+============================
+
+Updates to PYNQ since the last release include:
+
+* Image releases:
+   * pynq_z1_v3.0.0
+   * pynq_z2_v3.0.0
+   * zcu104_v3.0.0
+   * pynq_zu_v3.0.0
+   * zcu111_v3.0.0
+   * rfsoc2x2_v3.0.0
+   * rfsoc4x2_v3.0.0
+   * (new) zcu208_v3.0.0
+
+* Official Ubuntu 22.04 support on the Kria-PYNQ repository:
+   * KV260
+   * (new) KR260
+
+* Upgraded Software
+   * All overlays built with Vivado 2022.1
+   * Linux kernel and build updated to Petalinux 2022.1
+
+* Productivity additions - software
+   * Updated to Python 3.10
+   * Updated to JupyterLab 3.4.4
+   * Updated to Ubuntu 22.04 based packages
+   * Separation of PYNQ-Utils repository for overlay packaging
+
+* Productivity additions - hardware
+   * Added XSA parsing support
+   * Added debug bridge IP for XVC server support
+   * Improved support for block design containers and partial reconfiguration
+   * Separation of PYNQ-Metadata repository for design exploration
+
+* SD Build updates
+   * API change to emphasize builds using prebuilt root filesystem
+   * API change to emphasize builds using PYNQ source distribution
+   * XRT library included in board-agnostic images
+
+* Deprecations
+   * PL server as a multi-user daemon is deprecated - pynq server CLI is also deprecated
+   * 3rd party board automatic building of overlays in SD Build is deprecated
+   * Wavedrom viewing in JupyterLabs is deprecated - Jupyter notebook viewing is still supported
+   * Use of pynq/utils.py will be deprecated in future releases - PYNQ-Utils will have same APIs
+   * Use of pynq/pl_server/<Vivado parsers>.py will be deprecated in future releases - PYNQ-Metadata will have same APIs
+
+
+Version 2.7.0 
+============================
+
+Updates to PYNQ since the last release include:
+
+* Image releases:
+   * pynq_z1_v2.7.0
+   * pynq_z2_v2.7.0
+   * zcu104_v2.7.0
+   * zcu111_v2.7.0
+   * rfsoc2x2_v2.7.0
+   * pynq_zu_v2.7.0
+   
+* Upgraded Software
+   * All overlays built with Vivado 2020.2
+   * Linux kernel and build updated to Petalinux 2020.2
+
+* Productivity additions
+   * Updated to Python 3.8
+   * Updated to JupyterLab 3.0.16
+   * Updated to Ubuntu 20.04 based packages
+   * Pynq and Jupyter now execute in a virtual environment (venv)
+
+* SD Build updates
+   * Updated to use OpenEmbedded WIC flows for building SD card images   
+
+* Programmable Logic updates
+   * Added cmac.py for 100 GbE offload
+   * PL DRAM allocation support added
+   * RFSoC clock and data converters updated to support RFSoC Gen3 devices
+
+* Deprecations
+   * Removed Xlnk allocator and libraries for edge devices (replaced by XRT allocation)
+
+
+Version 2.6.0 
+============================
+
+Updates to PYNQ since the last release include:
+
+* Image releases:
+   * pynq_z1_v2.6.0
+   * pynq_z2_v2.6.0
+   * zcu104_v2.6.0
+   * zcu111_v2.6.0
+   
+* Upgraded Software
+   * All overlays built with Vivado 2020.1
+   * Linux kernel and build updated to Petalinux 2020.1
+
+* Productivity Additions
+   * Docker support enabled in the kernel config
+   * Pybind11 support and notebook added for C++ integration
+   * Support for BOOT.BIN bitstream inclusion for custom sdcard builds
+   * Boot.py added to boot partition to enable modifications to the PYNQ boot flow.
+
+* Deprecations
+   * Removed Xlnk allocator from all notebooks - please now use pynq.allocate
+   * Tcl parsing removed - please generate and use an HWH file for Overlays
+
+
+Version 2.5.1 
+============================
+
+Updates to PYNQ since the last release include:
+
+* Alveo and AWS F1 Support
+   * Alveo platforms and AWS F1 instances are now supported
+   * IP dictionary and Overlay classes support xclbin metadata parsing
+   * Live Alveo power monitoring added
+   * Vitis kernel signatures delivered with loaded xlcbin files
+   * AWS F1 awsxclbin files are supported
+
+* Productivity Additions
+   * PYNQ is now on PYPI and can be installed using ``pip install pynq``
+   * PYNQ can be installed on x86 machines to support attached Alveo platforms or AWS F1 instances
+   * pynq.utils added for dependent packages to install notebooks and bitstreams
+   * pynq._cli added for new commandline calls to collect and deliver notebooks
+   * JupyterLab views of bitstream metadata dictionaries added
+
+* SD Build Updates
+   * Support added for building sdcard images from Ubuntu 18.04 host machines
+
+* No new SD Card images were created for this release
+
+
+Version 2.5 
+============================
+
+* Image releases:
+   * pynq_z1_v2.5
+   * pynq_z2_v2.5
+   * zcu104_v2.5
+   * zcu111_v2.5
+
+Within those image files, PYNQ v2.5 is already installed. Updates to PYNQ since the last release include:
+
+* Productivity Additions
+   * Updated to JupyterLab 1.1.3
+   * JupyterLab extensions support added
+   * Support for multiple memories using mem_dict entries
+   * Support for Device Tree Overlays delivered with PL overlays
+   * Support for custom PL device communication using the Device metaclass 
+* Programmable Logic Updates
+   * All bitstreams built using Vivado 2019.1
+   * XRT Support added (beta)
+* Repository Updates
+   * Jenkins CI added
+   * Sdist support added (removing all binaries from the repository)
+* SDBuild Updates
+   * Boot partition built on Petalinux 2019.1
+
+
+Version 2.4 
+============================
+
+* Image releases:
+   * pynq_z1_v2.4
+   * pynq_z2_v2.4
+   * zcu104_v2.4
+   * zcu111_v2.4 
+
+Documentation updated 22 Feb 2019
+
+* Board Additions
+   * RFSoC support added in the new ZCU111-PYNQ repository
+* Programmable Logic Updates
+   * All bitstreams built using Vivado 2018.3
+   * Partial reconfiguration support added (beta)
+   * Expanded metadata parsing using the Vivado hwh files
+* SDBuild Updates
+   * Boot partition built on Petalinux 2018.3
+   * SDSoC 2018.3 support added
+   * Vagrant configuration file for users building their own SDCard images
+   * Yocto recipes added for including PYNQ in Petalinux root filesystems
+
+
 Version 2.3 
 ============================
 
@@ -253,5 +496,5 @@ Documentation updated: 16 Dec 2016
    * Pmod Finger HR
    * Pmod Haptic motor
    * Pmod TH02
-* Added USB WiFI driver
+* Added USB WiFi driver
    

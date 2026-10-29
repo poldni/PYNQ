@@ -3,27 +3,22 @@
 set -x
 set -e
 
-if [ -f /usr/local/share/x11/Welcome\ to\ Pynq.ipynb ]; then
-	jupyter nbconvert --to html \
-	/usr/local/share/x11/Welcome\ to\ Pynq.ipynb
-	rm -f /usr/local/share/x11/Welcome\ to\ Pynq.ipynb
+. /etc/environment
+for f in /etc/profile.d/*.sh; do source $f; done
+
+if [ ${ARCH} == 'arm' ]; then
+    export PKG_CONFIG_PATH=/usr/lib/arm-linux-gnueabihf/pkgconfig
+else
+    export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig
 fi
 
-systemctl enable pynq-x11.service
+if [ -f /home/xilinx/Welcome\ to\ Pynq.ipynb ]; then
+	jupyter nbconvert --to html \
+	/home/xilinx/Welcome\ to\ Pynq.ipynb
+	rm -f /home/xilinx/Welcome\ to\ Pynq.ipynb
+fi
 
-chown -R xilinx:xilinx /home/xilinx/.config/chromium
-chmod a+x /usr/bin/killchromium
+systemctl disable pynq-x11.service
+systemctl set-default multi-user
 
-mkdir /root/armsoc_build
-cd /root/armsoc_build
-
-git clone https://anongit.freedesktop.org/git/xorg/driver/xf86-video-armsoc.git
-cd xf86-video-armsoc
-git apply /armsoc.patch --ignore-whitespace
-./autogen.sh
-./configure --prefix=/usr
-make -j4
-make install
-cd /
-rm -rf /root/armsoc_build
-rm /armsoc.patch
+echo startfluxbox > /root/.xinitrc

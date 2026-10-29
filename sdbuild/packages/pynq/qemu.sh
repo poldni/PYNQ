@@ -5,21 +5,48 @@ set -e
 set -x
 
 . /etc/environment
+for f in /etc/profile.d/*.sh; do source $f; done
+
 export HOME=/root
 export BOARD=${PYNQ_BOARD}
 
 cd /home/xilinx
 mkdir -p jupyter_notebooks
 
+# clone and then install extra packages
+python3 -m pip install --upgrade git+https://github.com/Xilinx/PYNQ-Metadata.git
+python3 -m pip install --upgrade git+https://github.com/Xilinx/PYNQ-Utils.git
+
 cd pynq_git
-python3.6 -m pip install . --upgrade
-sdbuild/packages/pynq/get_revision.sh > /home/xilinx/REVISION
+# setuptools>=68 (Python 3.12), <=80 (pynqutils).
+python3 -m pip install --upgrade 'setuptools>=68,<=80'
+
+pynq_setup_notebooks=${PYNQ_JUPYTER_NOTEBOOKS}
+if [ "${PYNQ_BOARD}" = "VCK190" ]; then
+    find "${PYNQ_JUPYTER_NOTEBOOKS}" -mindepth 1 -delete
+    pynq_setup_notebooks=
+fi
+
+BOARD=${PYNQ_BOARD} PYNQ_JUPYTER_NOTEBOOKS=${pynq_setup_notebooks} \
+     python3 -m pip install dist/*.tar.gz --upgrade --no-deps --no-build-isolation
+
+# v3.1 - if using prebuilt SDIST, allow current pynq_git contents to
+#        override the SDIST python files with current contents (--ignore-installed)
+if [ -z "$REBUILD_PYNQ_SDIST" ]; then
+    BOARD=${PYNQ_BOARD} PYNQ_JUPYTER_NOTEBOOKS=${pynq_setup_notebooks} \
+     python3 -m pip install . --upgrade --no-deps --no-build-isolation --ignore-installed
+fi
+
+
+
+if [ -d notebooks ]; then
+     cp -r notebooks/* ${PYNQ_JUPYTER_NOTEBOOKS}/
+fi
 cd ..
 
 old_hostname=$(hostname)
 pynq_hostname.sh
 hostname $old_hostname
-rm -rf pynq_git
 rm -rf jupyter_notebooks_*
 
 cd /root
@@ -32,4 +59,3 @@ chown xilinx:xilinx /home/xilinx/REVISION
 chown xilinx:xilinx -R /home/xilinx/pynq
 chown xilinx:xilinx -R /home/xilinx/jupyter_notebooks
 chown xilinx:xilinx -R $pynq_dir
-systemctl enable pl_server

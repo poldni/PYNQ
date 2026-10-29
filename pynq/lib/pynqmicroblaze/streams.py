@@ -1,45 +1,19 @@
 #   Copyright (c) 2016, Xilinx, Inc.
-#   All rights reserved.
-#
-#   Redistribution and use in source and binary forms, with or without
-#   modification, are permitted provided that the following conditions are met:
-#
-#   1.  Redistributions of source code must retain the above copyright notice,
-#       this list of conditions and the following disclaimer.
-#
-#   2.  Redistributions in binary form must reproduce the above copyright
-#       notice, this list of conditions and the following disclaimer in the
-#       documentation and/or other materials provided with the distribution.
-#
-#   3.  Neither the name of the copyright holder nor the names of its
-#       contributors may be used to endorse or promote products derived from
-#       this software without specific prior written permission.
-#
-#   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-#   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-#   THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-#   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
-#   CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-#   EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-#   PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
-#   OR BUSINESS INTERRUPTION). HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-#   WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-#   OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-#   ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#   SPDX-License-Identifier: BSD-3-Clause
 
 import numpy as np
 import struct
 
-__author__ = "Peter Ogden"
-__copyright__ = "Copyright 2017, Xilinx"
-__email__ = "ogden@xilinx.com"
 
+
+PTR_OFFSET = 0x80000000
 
 # On aarch64 systems we can suffer from SEGFAULTS in memcpy if
 # unaligned address are copied
 def _safe_copy(dest, src):
     for i in range(len(src)):
         dest[i] = src[i]
+
 
 class SimpleMBChannel:
     def __init__(self, buffer, offset=0, length=0):
@@ -123,10 +97,10 @@ _float_struct = struct.Struct('f')
 
 class SimpleMBStream:
     def __init__(self, iop, read_offset=0xF400, write_offset=0xF000):
-        self.read_channel = SimpleMBChannel(iop.mmio.mem, offset=read_offset,
+        self.read_channel = SimpleMBChannel(iop.mmio.array, offset=read_offset,
                                             length=0x400)
-        self.write_channel = SimpleMBChannel(iop.mmio.mem, offset=write_offset,
-                                             length=0x400)
+        self.write_channel = SimpleMBChannel(iop.mmio.array,
+                                             offset=write_offset, length=0x400)
 
     def read(self, n=-1):
         return self.read_channel.read(n)
@@ -207,3 +181,5 @@ class InterruptMBStream(SimpleMBStream):
             data = self.read()
             self.interrupt.clear()
         return data
+
+

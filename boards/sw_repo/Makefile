@@ -1,13 +1,29 @@
 # Makefile to build BSPs.
-HDF := ../Pynq-Z1/base/base/base.sdk/base.hdf
-HW_DEF := hw_base
+# NOTE: the historic default XSA (../Pynq-Z1/base/base.xsa) was removed when
+# Pynq-Z1/Z2 were deprecated. Callers must supply XSA=... explicitly.
+XSA :=
 
-all: sdk_workspace
+.PHONY: workspace bsp
+all: help workspace bsp
 
-sdk_workspace:
-	xsdk -batch -source build_xsdk.tcl $(HDF) $(HW_DEF)
+help:
+	@echo "usage: make [target]"
+	@echo
+	@echo "arguments:"
+	@echo "----------"
+	@echo "XSA:     relative/absolute path to the XSA file"
+	@echo
+	@echo "current configuration:"
+	@echo "----------------------"
+	@echo "make XSA=$(XSA)"
+	@echo
+
+workspace:
+	LD_PRELOAD= xsct build_project.tcl $(XSA)
+
+bsp:
+	bash build_bsp.sh
 
 clean:
-	rm -rf bsp_*
-	rm -rf hw_*
-	rm -rf .Xil .metadata SDK.log
+	rm -rf bsp_* hw_build
+	rm -rf .Xil .metadata *.log .analytics

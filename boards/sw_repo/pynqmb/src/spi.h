@@ -51,10 +51,13 @@
  *****************************************************************************/
 #ifndef _SPI_H_
 #define _SPI_H_
-
+#ifdef __cplusplus 
+extern "C" {
+#endif
 #include <xparameters.h>
 
 #ifdef XPAR_XSPI_NUM_INSTANCES
+#define PYNQ_HAS_SPI
 
 /*
  * SPI API
@@ -62,14 +65,21 @@
 typedef int spi;
 
 spi spi_open_device(unsigned int device);
-spi spi_open(unsigned int spiclk, unsigned int miso, 
+#ifdef XPAR_IO_SWITCH_NUM_INSTANCES
+#ifdef XPAR_IO_SWITCH_0_SPI0_BASEADDR
+spi spi_open(unsigned int spiclk, unsigned int miso,
              unsigned int mosi, unsigned int ss);
-spi spi_configure(spi dev_id, unsigned int clk_phase, 
-                   unsigned int clk_polarity);
-void spi_transfer(spi dev_id, const char* write_data, char* read_data, 
+#endif
+#endif
+spi spi_configure(spi dev_id, unsigned int clk_phase,
+                  unsigned int clk_polarity);
+void spi_transfer(spi dev_id, const char *write_data, char *read_data,
                   unsigned int length);
 void spi_close(spi dev_id);
 unsigned int spi_get_num_devices(void);
 
 #endif
-#endif  // _SPI_H_
+#ifdef __cplusplus 
+}
+#endif
+#endif                          // _SPI_H_
